@@ -1,0 +1,51 @@
+name: tick
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # GitHub may start runs a few minutes late
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no Telegram sends)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: tick
+  cancel-in-progress: false   # never run two ticks at once; state would race
+
+permissions:
+  contents: write              # to commit state/state.json back
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run tick
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ vars.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          JEV_API_KEY: ${{ secrets.JEV_API_KEY }}
+          JEV_BASE_URL: ${{ vars.JEV_BASE_URL }}
+          JEV_MODEL: ${{ vars.JEV_MODEL }}
+          DRAFTERS: ${{ vars.DRAFTERS || 'claude,jev' }}
+          AUTHOR_NAME: ${{ vars.AUTHOR_NAME || 'Leo' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: python -m radar.main
+      - name: Commit state
+        run: |
+          git config user.name "ai-radar-bot"
+          git config user.email "ai-radar-bot@users.noreply.github.com"
+          git add state/state.json
+          git diff --cached --quiet || git commit -m "state: tick $(date -u +%FT%TZ)" -q
+          git pull --rebase -q && git push -q

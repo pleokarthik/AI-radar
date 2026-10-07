@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "min_tier": "notable",
+  "hf_min_upvotes": 20,
+  "hn_min_points": 150,
+  "max_drafts_per_day": 4,
+  "source_weights": {},
+  "few_shot_positive": 3,
+  "few_shot_negative": 3,
+  "changelog": [
+    {"version": 1, "date": "2026-10-08", "change": "initial policy"}
+  ]
+}

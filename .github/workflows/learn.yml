@@ -1,0 +1,45 @@
+name: learn
+
+on:
+  schedule:
+    - cron: "30 2 * * 6"   # Saturday 08:00 IST
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Window in days"
+        default: "14"
+
+permissions:
+  contents: write
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Biweekly gate
+        id: gate
+        run: |
+          # cron can't express "every 2 weeks"; run on even ISO weeks unless LEARN_EVERY_WEEKS=1
+          every="${{ vars.LEARN_EVERY_WEEKS || '2' }}"
+          week=$(date -u +%V)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ $((10#$week % every)) -eq 0 ]; then
+            echo "run=1" >> "$GITHUB_OUTPUT"; else echo "skip (week $week)"; fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == '1'
+        with: { python-version: "3.12", cache: pip }
+      - if: steps.gate.outputs.run == '1'
+        run: pip install -r requirements.txt
+      - if: steps.gate.outputs.run == '1'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: python -m radar.learn --days "${{ inputs.days || '14' }}" --notify
+      - if: steps.gate.outputs.run == '1'
+        run: |
+          git config user.name "ai-radar-bot"
+          git config user.email "ai-radar-bot@users.noreply.github.com"
+          git add reports/
+          git diff --cached --quiet || git commit -qm "learn: report $(date -u +%F)"
+          git pull --rebase -q && git push -q
