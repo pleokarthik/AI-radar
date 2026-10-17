@@ -1,0 +1,27 @@
+{
+ "window_days": 14,
+ "events": 0,
+ "generated": "2026-10-17T07:04:39.007203+00:00",
+ "funnel": {
+  "scored": 0,
+  "scored_by_tier": {},
+  "drafted": 0,
+  "published": 0,
+  "skipped": 0,
+  "undecided": 0
+ },
+ "approval_by_tier": {},
+ "approval_by_source": {},
+ "source_yield": {},
+ "provider_wins": {},
+ "tier_corrections": {},
+ "reactions_by_tier": {},
+ "reactions_by_provider": {},
+ "median_minutes_to_decide": null,
+ "take_rate": "n/a",
+ "misses": [],
+ "notes": [],
+ "approval_by_policy_version": {},
+ "example_candidates": [],
+ "suggestions": []
+}
